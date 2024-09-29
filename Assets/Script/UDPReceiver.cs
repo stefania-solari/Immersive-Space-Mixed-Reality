@@ -201,7 +201,7 @@ public class UDPReceiver : MonoBehaviour
     private Thread udpReceiveThread;
     private bool receiving = true;
 
-    public int localPort = 9000;  // Local port to listen for incoming messages
+    public int localPort = 80;  // Local port to listen for incoming messages
 
     // Delegate for when a message is received
     public delegate void MessageReceivedHandler(string message);

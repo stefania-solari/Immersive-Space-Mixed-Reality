@@ -2162,12 +2162,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1709087789}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: db0fd82ace61a42498e311b88d156f2f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  localPort: 9000
+  localPort: 80
 --- !u!114 &1709087793
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2180,12 +2180,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff21621ca90a449be8c7a6a93fca9b90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  objectPrefab: {fileID: 749972018946771579, guid: 75208d74b83014d4580691f34a8ebc18, type: 3}
-  secondJellifish: {fileID: 749972018946771579, guid: 75208d74b83014d4580691f34a8ebc18, type: 3}
-  planeManager: {fileID: 1772897519}
-  spawnPosition: {x: 0, y: 0.5, z: 0}
   remoteIPAddress: 192.168.43.201
   remotePort: 8000
+  localIPAddress: 192.168.43.1
+  localPort: 9000
+  objectPrefab: {fileID: 749972018946771579, guid: 75208d74b83014d4580691f34a8ebc18, type: 3}
+  secondJellyfish: {fileID: 0}
+  planeManager: {fileID: 1772897519}
+  jellyfishList: []
+  spawnPosition: {x: 0, y: 0.5, z: 0}
+  isTouched: 0
 --- !u!4 &1732410181 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5310702087570344806, guid: 58011bca9681c484080084eccc4cb150, type: 3}
@@ -2874,10 +2878,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d0c3bedd8116443db460b4f630cc82d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  remoteIPAddress: 172.20.10.10
-  remotePort: 8000
-  localPort: 9000
-  objectTouched: 0
 --- !u!224 &1261073044793567346
 RectTransform:
   m_ObjectHideFlags: 0

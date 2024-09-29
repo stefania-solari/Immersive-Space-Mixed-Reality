@@ -8,233 +8,167 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 using UnityEngine.XR.ARFoundation;
 using System.Collections;
+using System.Threading;
+using System;
 
-
-public class JellifishSpawner : MonoBehaviour
+public class JellyfishSpawner : MonoBehaviour
 {
+    //socket
+    private Socket udpSocket;  // Socket for UDP communication
+    private IPEndPoint remoteEndPoint;
+    private IPEndPoint localEndPoint;
+    private Thread udpReceiveThread;
+    private bool isReceiving = true;
+
+    // IP and Port Configuration
+    public string remoteIPAddress = "192.168.43.201";  // The IP of the TouchDesigner machine
+    public int remotePort = 8000;  // Port number on the TouchDesigner machine
+
+    public string localIPAddress = "192.168.43.5";  // IP address of the receiver (e.g., Meta Quest or PC)
+    public int localPort = 9000;  // Port of the receiver (Meta Quest or PC)
+
+    public delegate void MessageReceivedHandler(string message);
+    public event MessageReceivedHandler OnMessageReceived;
 
 
-    public GameObject objectPrefab;  // Reference to the Cube Prefab
-    public GameObject secondJellifish;  // Reference to the Cube Prefab
 
+
+    //instances
+    public GameObject objectPrefab;  // Reference to the Jellyfish Prefab
+    public GameObject secondJellyfish;  // Reference to the second Jellyfish Prefab
 
     public ARPlaneManager planeManager;  // Reference to the ARPlaneManager
     private List<ARPlane> detectedPlanes = new List<ARPlane>();  // List to store detected planes
     private bool planesDetected = false; // Flag to check if planes are detected
     private bool messageReceived = false; // Flag to check if the message has been received
 
+    public List<GameObject> jellyfishList = new List<GameObject>();  // List to store spawned jellyfish instances
+    public Vector3 spawnPosition = new Vector3(0, 0.5f, 0);  // Position to spawn the jellyfish
+    private GameObject spawnedJellyfish;  // Store the most recently spawned jellyfish instance
 
-    public Vector3 spawnPosition = new Vector3(0, 0.5f, 0);  // Position to spawn the cube
-    private GameObject spawnedJellifish;  // Store the spawned cube instance
+    //interactions
 
-    private Socket udpSocket;  // Socket for UDP communication
-    public string remoteIPAddress = "192.168.43.201";//"192.168.61.162";  // The IP of the TouchDesigner machine
-    public int remotePort = 8000;  // Port number on the TouchDesigner machine
-    private IPEndPoint remoteEndPoint;
-
-    private UDPReceiver udpReceiver;  // Reference to the UDPReceiver
-
-
-    // Track whether each hand is touching the cube
+    // Track whether each hand is touching the jellyfish
     private bool isLeftHandTouching = false;
     private bool isRightHandTouching = false;
 
+    public bool isTouched = false;  // Tracks if the jellyfish has been touched
 
 
+
+    public int portToCheck = 9000;
+    private UdpClient udpListener;
+    private bool isListening = true;
 
     void Start()
     {
-        // Setup the UDP socket
+          // Initialize UDP socket
         SetupUDPSocket();
-
-        // Get the UDPReceiver component
-        udpReceiver = GetComponent<UDPReceiver>();
-
-
-        // Subscribe to the message event (e.g., UDP message)
-        // Assuming you have an event from your receiver that triggers this
-        udpReceiver.OnMessageReceived += HandleMessageReceived;;
+        // Start receiving messages
+        //StartReceiving();
+ 
 
         // Collecting detected planes
         planeManager.planesChanged += OnPlanesChanged;
 
+
+
+          // Start listening for incoming data on the specified port
+        if (CheckIfPortCanReceiveData(portToCheck))
+        {
+            SendMessageToTouchDesigner("Listening for incoming data on UDP port " + portToCheck);
+
+            Debug.Log("Listening for incoming data on UDP port " + portToCheck);
+        }
+        else
+        {
+            SendMessageToTouchDesigner("Failed to listen on UDP port " + portToCheck);
+            Debug.LogError("Failed to listen on UDP port " + portToCheck);
+        }
     }
 
-      private void OnPlanesChanged(ARPlanesChangedEventArgs args)
+
+    bool CheckIfPortCanReceiveData(int port)
     {
-        // Add the detected planes to the list
-        foreach (var addedPlane in args.added)
+        try
         {
-            detectedPlanes.Add(addedPlane);
-        }
+            // Initialize the UDP listener
+            udpListener = new UdpClient(port);
+            SendMessageToTouchDesigner("Started listening on port " + port);
 
-        // Set planesDetected to true once we detect at least one plane
-        if (detectedPlanes.Count > 0)
+            Debug.Log("Started listening on port " + port);
+
+            // Begin receiving data asynchronously
+            udpListener.BeginReceive(OnDataReceived, null);
+            SendMessageToTouchDesigner("is listening");
+
+            return true;
+
+
+        }
+        catch (SocketException ex)
         {
-            planesDetected = true;
-            Debug.Log("Planes detected.");
-             // Send a hello message
-            SendMessageToTouchDesigner("all Planes detected.");
-        }
+            SendMessageToTouchDesigner("SocketException while trying to receive on port " + port + ": " + ex.Message);
 
-        // Try to spawn the object if both planes are detected and the message has been received
-        SpawnObjectOnRandomPlaneAuto();
+            Debug.LogError("SocketException while trying to receive on port " + port + ": " + ex.Message);
+            return false;
+        }
     }
 
 
-
-    private void HandleMessageReceived(string message)
+        private void OnDataReceived(IAsyncResult result)
     {
-        if (message == "InstantiateJellyfish")
+        try
         {
-            messageReceived = true;
-            Debug.Log("Message received: " + message);
-            SendMessageToTouchDesigner("message received");
+           SendMessageToTouchDesigner("OnDataReceived");
 
+            // Get the received data
+            IPEndPoint senderEndPoint = new IPEndPoint(IPAddress.Any, portToCheck);
+            byte[] receivedData = udpListener.EndReceive(result, ref senderEndPoint);
 
-            // Try to spawn the object if both planes are detected and the message has been received
-            TrySpawnObject();
+           SendMessageToTouchDesigner("message received");
+
+            // Convert the received data to a string
+            string receivedMessage = Encoding.UTF8.GetString(receivedData);
+            Debug.Log("Data received on port " + portToCheck + ": " + receivedMessage);
+           SendMessageToTouchDesigner("Data received on port " +  portToCheck + ": " + receivedMessage);
+
+            // Restart listening for more data
+            if (isListening)
+            {
+                udpListener.BeginReceive(OnDataReceived, null);
+                SendMessageToTouchDesigner("error generic");
+
+            }
         }
-    }
-
-    private void TrySpawnObject()
-    {
-        // Only spawn the object if both the planes are detected and the message has been received
-        if (planesDetected && messageReceived)
+        catch (SocketException ex)
         {
-            SpawnSecondJellifishOnRandomPlane();
-        }
-    }
+            SendMessageToTouchDesigner("Error receiving data: " + ex.Message);
 
-    void SpawnObjectOnRandomPlaneAuto()
-    {
-        if (detectedPlanes.Count == 0)
-        {
-            Debug.Log("No planes available for spawning.");
-            return;
-        }
-
-        // Select a random plane
-        ARPlane randomPlane = detectedPlanes[Random.Range(0, detectedPlanes.Count)];
-
-        // Get a random point on the plane's bounds
-        Vector3 randomPosition = randomPlane.transform.position +
-                                 new Vector3(Random.Range(-0.5f, 0.5f), 0, Random.Range(-0.5f, 0.5f)) * randomPlane.size.x;
-
-        // Instantiate the object at the random position on the plane
-        spawnedJellifish = Instantiate(objectPrefab, randomPosition, Quaternion.identity);
-
-        // Ensure the cube has the necessary components for XR interaction
-        SetupCubeForXRInteraction(spawnedJellifish);
-
-           // Start the destruction coroutine to destroy the jellyfish after 20 seconds
-        StartCoroutine(DestroyAfterDelay(spawnedJellifish, 20f));
-    }
-
-
-
-    IEnumerator DestroyAfterDelay(GameObject jellyfish, float delay)
-    {
-        // Wait for the specified delay (20 seconds)
-        yield return new WaitForSeconds(delay);
-
-        // Destroy the jellyfish
-        if (jellyfish != null)
-        {
-            Debug.Log("Jellyfish destroyed after " + delay + " seconds.");
-            Destroy(jellyfish);
+            Debug.LogError("Error receiving data: " + ex.Message);
         }
     }
 
 
-    void SpawnSecondJellifishOnRandomPlane()
-    {
-        if (detectedPlanes.Count == 0)
-        {
-            Debug.Log("No planes available for spawning.");
-            return;
-        }
-
-        // Select a random plane
-        ARPlane randomPlane = detectedPlanes[Random.Range(0, detectedPlanes.Count)];
-
-        // Get a random point on the plane's bounds
-        Vector3 randomPosition = randomPlane.transform.position +
-                                 new Vector3(Random.Range(-0.5f, 0.5f), 0, Random.Range(-0.5f, 0.5f)) * randomPlane.size.x;
-
-        // Instantiate the object at the random position on the plane
-        spawnedJellifish = Instantiate(secondJellifish, randomPosition, Quaternion.identity);
-
-        // Ensure the cube has the necessary components for XR interaction
-        SetupCubeForXRInteraction(spawnedJellifish);
-    }
-
-  private void OnDestroy()
-    {
-        // Unsubscribe from the message event when the script is destroyed
-        udpReceiver.OnMessageReceived -= HandleMessageReceived;
-        planeManager.planesChanged -= OnPlanesChanged;
-    }
- 
-   // Spawns a jellyfish directly in front of the user at a fixed distance
-
-   /*
-    void SpawnJellyfishInFrontOfUser()
-    {
-        // Calculate the exact position directly in front of the user at the specified distance
-        Vector3 spawnPosition = userCamera.position + userCamera.forward * spawnDistanceFromUser;
-
-        // Instantiate the jellyfish at the calculated position
-        GameObject newJellyfish = Instantiate(jellyfishPrefab, spawnPosition, Quaternion.identity);
-
-        // Start the jellyfish's organic movement toward the user (optional, or it can just float in place)
-        StartCoroutine(MoveJellyfishTowardUser(newJellyfish));
-    }
-*/
-
-    void SetupCubeForXRInteraction(GameObject cube)
-    {
-        // Add XRGrabInteractable if it's not already on the cube
-        XRGrabInteractable grabInteractable = cube.GetComponent<XRGrabInteractable>();
-        if (grabInteractable == null)
-        {
-            grabInteractable = cube.AddComponent<XRGrabInteractable>();
-        }
-
-        // Ensure the cube has a Rigidbody (required for XR interaction)
-        Rigidbody rb = cube.GetComponent<Rigidbody>();
-        if (rb == null)
-        {
-            rb = cube.AddComponent<Rigidbody>();
-            rb.isKinematic = true;  // Disable physics when not held
-        }
-
-        // Ensure the cube has a Collider
-        Collider col = cube.GetComponent<Collider>();
-        if (col == null)
-        {
-            col = cube.AddComponent<BoxCollider>();  // Default to BoxCollider if no Collider is present
-        }
-        SendMessageToTouchDesigner("Setup jellifish done");
-
-        // Add listeners for detecting when either hand touches or grabs the cube
-        grabInteractable.selectEntered.AddListener(OnCubeTouched);
-        grabInteractable.selectExited.AddListener(OnCubeReleased);
 
 
-    }
 
+//---------------------------------------------------------- Udp send/receive
     void SetupUDPSocket()
     {
         try
         {
-            // Initialize the UDP socket
             udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             remoteEndPoint = new IPEndPoint(IPAddress.Parse(remoteIPAddress), remotePort);
             Debug.Log("UDP socket setup completed.");
+            SendMessageToTouchDesigner("Hello before local endpoint");
 
-            // Send a hello message
-            SendMessageToTouchDesigner("Hello from Unity!");
+
+             // Bind the socket to the local IP and port (Meta Quest)
+            localEndPoint = new IPEndPoint(IPAddress.Parse(localIPAddress), localPort);
+            udpSocket.Bind(localEndPoint);
+
+            SendMessageToTouchDesigner("Hello after local endopint!");
         }
         catch (SocketException e)
         {
@@ -248,7 +182,6 @@ public class JellifishSpawner : MonoBehaviour
 
         try
         {
-            // Send the message via the UDP socket to the specified endpoint
             udpSocket.SendTo(data, remoteEndPoint);
             Debug.Log("Message sent to TouchDesigner: " + message);
         }
@@ -258,104 +191,281 @@ public class JellifishSpawner : MonoBehaviour
         }
     }
 
-    // Called when either hand touches the cube
-    private void OnCubeTouched(SelectEnterEventArgs args)
+    // Start receiving UDP messages in a background thread
+
+    /*
+    void StartReceiving()
     {
-        SendMessageToTouchDesigner("Cube touched at first time!");
-        // Use interactorObject, which replaces the deprecated interactor
-        XRBaseInteractor interactor = args.interactorObject as XRBaseInteractor;
+        udpReceiveThread = new Thread(new ThreadStart(ReceiveMessages));
+        udpReceiveThread.IsBackground = true;
+        SendMessageToTouchDesigner("daje!");
 
-        if (interactor != null)
-        {
-            SendMessageToTouchDesigner("Interaction no null");
+        udpReceiveThread.Start();
 
-            // Identify which hand is touching the cube
-            if (interactor.name.Contains("LeftHand"))
-            {
-                isLeftHandTouching = true;
-                SendMessageToTouchDesigner("left hand");
+        SendMessageToTouchDesigner("daje 2!");
 
-            }
-            else if (interactor.name.Contains("RightHand"))
-            {
-                isRightHandTouching = true;
-                SendMessageToTouchDesigner("right hand");
 
-            }
-
-            // If both hands are touching, trigger the interaction
-            if (isLeftHandTouching && isRightHandTouching)
-            {
-                SendMessageToTouchDesigner("both hands");
-
-                // Change the color of the cube to green to indicate interaction
-                //SetCubeColor(Color.green);
-
-                // Send a message indicating the cube was touched by both hands
-                SendMessageToTouchDesigner("Cube was touched by both hands!");
-            }
-        }
     }
 
-    // Called when either hand releases the cube
-    private void OnCubeReleased(SelectExitEventArgs args)
-    {
-         SendMessageToTouchDesigner("Cube released!");
-
-        // Use interactorObject, which replaces the deprecated interactor
-        XRBaseInteractor interactor = args.interactorObject as XRBaseInteractor;
-
-        if (interactor != null)
-        {
-            // Identify which hand released the cube
-            if (interactor.name.Contains("LeftHand"))
-            {
-                isLeftHandTouching = false;
-            }
-            else if (interactor.name.Contains("RightHand"))
-            {
-                isRightHandTouching = false;
-            }
-
-            // Reset the cube color when neither hand is touching
-            if (!isLeftHandTouching && !isRightHandTouching)
-            {
-                //SetCubeColor(Color.white);
-            }
-        }
-    }
+*/
 
 
-
-    // Helper function to set the cube's color
 
 /*
-    private void SetCubeColor(Color newColor)
-
+void ReceiveMessages()
+{
+    while (isReceiving)
     {
-        if (spawnedCube != null)
+        SendMessageToTouchDesigner("is receiving");  // Confirm method is running
+
+        try
         {
-            Renderer renderer = spawnedCube.GetComponent<Renderer>();
-            if (renderer != null)
+            SendMessageToTouchDesigner("Starting the try block for receiving message");
+
+            byte[] data = new byte[1024]; // Buffer for incoming messages
+            EndPoint senderEndPoint = new IPEndPoint(IPAddress.Any, 0);
+
+            // Receive data from the UDP socket
+            int receivedLength = udpSocket.ReceiveFrom(data, ref senderEndPoint);
+            SendMessageToTouchDesigner("mmm");
+
+            // If data is received
+            if (receivedLength > 0)
             {
-                // Change the cube's material color
-                renderer.material.color = newColor;
+                SendMessageToTouchDesigner("The message");
+
+                // Convert the received data to a string
+                string message = Encoding.UTF8.GetString(data, 0, receivedLength);
+
+                Debug.Log("Message received: " + message);  // Log the received message
+                SendMessageToTouchDesigner("Received message: " + message);
+
+                // Check if the message is "InstantiateJellyfish"
+                if (message == "InstantiateJellyfish")
+                {
+                    Debug.Log("InstantiateJellyfish message received. Spawning a new jellyfish.");
+                    SendMessageToTouchDesigner("InstantiateJellyfish message received!");
+
+                    // Call the method to instantiate a new jellyfish
+                    //SpawnJellyfish();
+                    SpawnSecondJellyfishOnRandomPlane();
+
+                }
+                else
+                {
+                    Debug.Log("Received different message: " + message);
+                }
+
+                // Trigger the message received event
+                OnMessageReceived?.Invoke(message);
             }
             else
             {
-                Debug.LogError("Renderer component not found on the cube.");
+                SendMessageToTouchDesigner("No data received, buffer length is 0");
             }
         }
+        catch (SocketException e)
+        {
+            SendMessageToTouchDesigner("SocketException occurred: " + e.Message);
+            Debug.LogError("Error receiving UDP message: " + e.Message);
+        }
+        catch (Exception ex)
+        {
+            SendMessageToTouchDesigner("General exception occurred: " + ex.Message);
+            Debug.LogError("General error occurred: " + ex.Message);
+        }
     }
-    */
+}
+
+*/
+
+
 
     void OnApplicationQuit()
     {
-        // Close the socket when the application quits to clean up resources
+        /*
+        isReceiving = false;
+
+        if (udpReceiveThread != null)
+        {
+            udpReceiveThread.Join();
+        }
+*/
+           // Stop listening and close the UDP listener when the application exits
+        isListening = false;
+        if (udpListener != null)
+        {
+            udpListener.Close();
+            udpListener = null;
+        }
+
         if (udpSocket != null)
         {
             udpSocket.Close();
-            udpSocket = null;
         }
     }
+
+
+//---------------------------------------------spawn auto
+    private void OnPlanesChanged(ARPlanesChangedEventArgs args)
+    {
+        // Add the detected planes to the list
+        foreach (var addedPlane in args.added)
+        {
+            detectedPlanes.Add(addedPlane);
+        }
+
+        // Set planesDetected to true once we detect at least one plane
+        if (detectedPlanes.Count > 0)
+        {
+            planesDetected = true;
+            Debug.Log("Planes detected.");
+            // Send a message
+            //SendMessageToTouchDesigner("All planes detected.");
+        }
+
+        // Try to spawn the object if  planes are detected
+        StartCoroutine(SpawnObjectOnRandomPlaneAuto());
+    }
+
+
+    IEnumerator SpawnObjectOnRandomPlaneAuto()
+    {
+        if (detectedPlanes.Count == 0)
+        {
+            Debug.Log("No planes available for spawning.");
+        }
+
+        // Select a random plane
+        ARPlane randomPlane = detectedPlanes[UnityEngine.Random.Range(0, detectedPlanes.Count)];
+
+        // Get a random point on the plane's bounds
+        Vector3 randomPosition = randomPlane.transform.position +
+                                 new Vector3(UnityEngine.Random.Range(-0.5f, 0.5f), 0, UnityEngine.Random.Range(-0.5f, 0.5f)) * randomPlane.size.x;
+
+        // Instantiate the jellyfish at the random position on the plane
+        spawnedJellyfish = Instantiate(objectPrefab, randomPosition, Quaternion.identity);
+        jellyfishList.Add(spawnedJellyfish);  // Add the spawned jellyfish to the list
+
+        // Ensure the jellyfish has the necessary components for XR interaction
+        SetupJellyfishForXRInteraction(spawnedJellyfish);
+
+        // Start the destruction coroutine to destroy the jellyfish after 20 seconds
+        StartCoroutine(DestroyAfterDelay(spawnedJellyfish, 10f));
+        yield return new WaitForSeconds(1f);  // Wait 1 second before spawning the next jellyfish
+
+    }
+
+    IEnumerator DestroyAfterDelay(GameObject jellyfish, float delay)
+    {
+        // Wait for the specified delay (20 seconds)
+        yield return new WaitForSeconds(delay);
+
+        // Destroy the jellyfish
+        if (jellyfish != null)
+        {
+            Debug.Log("Jellyfish destroyed after " + delay + " seconds.");
+            Destroy(jellyfish);
+            jellyfishList.Remove(jellyfish);  // Remove it from the list
+        }
+    }
+
+
+
+//-------------------------------------------------spawn message
+
+/*
+    private void HandleMessageReceived(string message)
+    {
+        if (message == "InstantiateJellyfish")
+        {
+            messageReceived = true;
+            Debug.Log("Message received: " + message);
+            SendMessageToTouchDesigner("Message received");
+
+            // Try to spawn the object if both planes are detected and the message has been received
+            TrySpawnObject();
+        }
+    }*/
+
+/*
+    private void TrySpawnObject()
+    {
+        // Only spawn the object if both the planes are detected and the message has been received
+        if (planesDetected && messageReceived)
+        {
+            SpawnSecondJellyfishOnRandomPlane();
+        }
+    }*/
+
+    void SpawnSecondJellyfishOnRandomPlane()
+    {
+        if (detectedPlanes.Count == 0)
+        {
+            Debug.Log("No planes available for spawning.");
+            return;
+        }
+
+        // Select a random plane
+        ARPlane randomPlane = detectedPlanes[UnityEngine.Random.Range(0, detectedPlanes.Count)];
+
+        // Get a random point on the plane's bounds
+        Vector3 randomPosition = randomPlane.transform.position +
+                                 new Vector3(UnityEngine.Random.Range(-0.5f, 0.5f), 0, UnityEngine.Random.Range(-0.5f, 0.5f)) * randomPlane.size.x;
+
+        // Instantiate the second jellyfish at the random position on the plane
+        GameObject newJellyfish = Instantiate(secondJellyfish, randomPosition, Quaternion.identity);
+        jellyfishList.Add(newJellyfish);  // Add the new jellyfish to the list
+
+        // Ensure the jellyfish has the necessary components for XR interaction
+        SetupJellyfishForXRInteraction(newJellyfish);
+    }
+
+
+
+
+    //---------------------------------------------------------jellyfish interaction
+
+    void SetupJellyfishForXRInteraction(GameObject jellyfish)
+    {
+        XRGrabInteractable grabInteractable = jellyfish.GetComponent<XRGrabInteractable>();
+        if (grabInteractable == null)
+        {
+            grabInteractable = jellyfish.AddComponent<XRGrabInteractable>();
+        }
+
+        //SendMessageToTouchDesigner("Jellyfish setup done");
+
+        // Add interaction listeners
+        grabInteractable.selectEntered.AddListener(OnJellyfishTouched);
+        grabInteractable.selectExited.AddListener(OnJellyfishReleased);
+    }
+
+    private void OnJellyfishTouched(SelectEnterEventArgs args)
+    {
+        SendMessageToTouchDesigner("Jellyfish arg! touch");
+        GameObject touchedJellyfish = args.interactableObject.transform.gameObject;
+        //some actions?
+
+    }
+
+    private void OnJellyfishReleased(SelectExitEventArgs args)
+    {
+    
+        SendMessageToTouchDesigner("Jellyfish arg! release");
+
+        GameObject releasedJellyfish = args.interactableObject.transform.gameObject;
+        SendMessageToTouchDesigner("Jellyfish released!");
+
+        // Destroy the jellyfish after release
+        if (releasedJellyfish != null)
+        {
+            StartCoroutine(DestroyAfterDelay(releasedJellyfish, 0.5f));  // Destroy after 1 second
+        }
+
+    }
+
+
+
+
 }
