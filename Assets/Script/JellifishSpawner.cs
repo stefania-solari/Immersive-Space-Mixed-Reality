@@ -85,6 +85,11 @@ public class JellyfishSpawner : MonoBehaviour
             SendMessageToTouchDesigner("Failed to listen on UDP port " + portToCheck);
             Debug.LogError("Failed to listen on UDP port " + portToCheck);
         }
+
+   // Start the coroutine to spawn a jellyfish every 2 seconds
+            StartCoroutine(SpawnJellyfishEveryTwoSeconds());
+
+  
     }
 
 
@@ -131,13 +136,14 @@ public class JellyfishSpawner : MonoBehaviour
             // Convert the received data to a string
             string receivedMessage = Encoding.UTF8.GetString(receivedData);
             Debug.Log("Data received on port " + portToCheck + ": " + receivedMessage);
-           SendMessageToTouchDesigner("Data received on port " +  portToCheck + ": " + receivedMessage);
+            SendMessageToTouchDesigner("Data received on port " +  portToCheck + ": " + receivedMessage);
+            HandleMessageReceived(receivedMessage);
+
 
             // Restart listening for more data
             if (isListening)
             {
                 udpListener.BeginReceive(OnDataReceived, null);
-                SendMessageToTouchDesigner("error generic");
 
             }
         }
@@ -322,18 +328,44 @@ void ReceiveMessages()
             Debug.Log("Planes detected.");
             // Send a message
             //SendMessageToTouchDesigner("All planes detected.");
+           
         }
 
         // Try to spawn the object if  planes are detected
-        StartCoroutine(SpawnObjectOnRandomPlaneAuto());
+        //StartCoroutine(SpawnObjectOnRandomPlaneAuto());
+        
     }
 
 
-    IEnumerator SpawnObjectOnRandomPlaneAuto()
+
+IEnumerator SpawnJellyfishEveryTwoSeconds()
+{
+    // Infinite loop to spawn jellyfish at intervals
+    while (true)
+    {
+        // Only spawn jellyfish if there are detected planes
+        if (detectedPlanes.Count > 0)
+        {
+            Debug.Log("Spawning jellyfish...");
+            SpawnObjectOnRandomPlaneAuto();
+        }
+        else
+        {
+            Debug.Log("No planes detected yet. Waiting...");
+        }
+
+        // Wait for 2 seconds before spawning the next jellyfish
+        yield return new WaitForSeconds(1f);
+    }
+}
+
+
+    private void SpawnObjectOnRandomPlaneAuto()
     {
         if (detectedPlanes.Count == 0)
         {
-            Debug.Log("No planes available for spawning.");
+            Debug.LogError("No planes available for spawning.");
+            return;
         }
 
         // Select a random plane
@@ -345,16 +377,51 @@ void ReceiveMessages()
 
         // Instantiate the jellyfish at the random position on the plane
         spawnedJellyfish = Instantiate(objectPrefab, randomPosition, Quaternion.identity);
-        jellyfishList.Add(spawnedJellyfish);  // Add the spawned jellyfish to the list
+        //jellyfishList.Add(spawnedJellyfish);  // Add the spawned jellyfish to the list
 
         // Ensure the jellyfish has the necessary components for XR interaction
         SetupJellyfishForXRInteraction(spawnedJellyfish);
 
         // Start the destruction coroutine to destroy the jellyfish after 20 seconds
         StartCoroutine(DestroyAfterDelay(spawnedJellyfish, 10f));
-        yield return new WaitForSeconds(1f);  // Wait 1 second before spawning the next jellyfish
+        //yield return null;  // Wait 1 second before spawning the next jellyfish
 
     }
+
+    
+    /*
+    private void SpawnObjectOnRandomPlaneAuto()
+{
+    // Check if there are any detected planes
+    if (detectedPlanes == null || detectedPlanes.Count == 0)
+    {
+        Debug.LogError("No planes available for spawning.");
+        return;
+    }
+
+    // Select a random plane from the list
+    //ARPlane randomPlane = detectedPlanes[UnityEngine.Random.Range(0, detectedPlanes.Count)];
+
+    // Check if the plane size is valid
+    if (randomPlane == null || randomPlane.size == Vector2.zero)
+    {
+        Debug.LogError("Invalid plane selected or plane size is zero.");
+        return;
+    }
+    
+
+    // Get a random point on the plane's bounds
+    Vector3 randomPosition = new Vector3(UnityEngine.Random.Range(-0.5f, 0.5f), 0, UnityEngine.Random.Range(-0.5f, 0.5f));
+
+    spawnedJellyfish = Instantiate(objectPrefab, randomPosition, Quaternion.identity);
+    // Ensure the jellyfish has the necessary components for XR interaction
+    SetupJellyfishForXRInteraction(spawnedJellyfish);
+
+    // Start the destruction coroutine to destroy the jellyfish after 10 seconds
+    //StartCoroutine(DestroyAfterDelay(spawnedJellyfish, 10f));
+
+}
+*/
 
     IEnumerator DestroyAfterDelay(GameObject jellyfish, float delay)
     {
@@ -374,9 +441,12 @@ void ReceiveMessages()
 
 //-------------------------------------------------spawn message
 
-/*
+
     private void HandleMessageReceived(string message)
     {
+        SpawnSecondJellyfishOnRandomPlane();
+
+        SendMessageToTouchDesigner("Message received, need to check");
         if (message == "InstantiateJellyfish")
         {
             messageReceived = true;
@@ -384,9 +454,10 @@ void ReceiveMessages()
             SendMessageToTouchDesigner("Message received");
 
             // Try to spawn the object if both planes are detected and the message has been received
-            TrySpawnObject();
+            //SpawnSecondJellyfishOnRandomPlane();
+            
         }
-    }*/
+    }
 
 /*
     private void TrySpawnObject()
@@ -419,6 +490,8 @@ void ReceiveMessages()
 
         // Ensure the jellyfish has the necessary components for XR interaction
         SetupJellyfishForXRInteraction(newJellyfish);
+        StartCoroutine(DestroyAfterDelay(spawnedJellyfish, 10f));
+
     }
 
 

@@ -2182,14 +2182,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   remoteIPAddress: 192.168.43.201
   remotePort: 8000
-  localIPAddress: 192.168.43.1
+  localIPAddress: 192.168.43.5
   localPort: 9000
   objectPrefab: {fileID: 749972018946771579, guid: 75208d74b83014d4580691f34a8ebc18, type: 3}
-  secondJellyfish: {fileID: 0}
+  secondJellyfish: {fileID: 8619187007975321079, guid: b462c2283f49241a7a31fa8044de953b, type: 3}
   planeManager: {fileID: 1772897519}
   jellyfishList: []
   spawnPosition: {x: 0, y: 0.5, z: 0}
   isTouched: 0
+  portToCheck: 9000
 --- !u!4 &1732410181 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5310702087570344806, guid: 58011bca9681c484080084eccc4cb150, type: 3}
@@ -3306,6 +3307,63 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7080002829328774586}
   m_CullTransparentMesh: 0
+--- !u!1001 &4658686440237373892
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2306808792450648738, guid: b462c2283f49241a7a31fa8044de953b, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2306808792450648738, guid: b462c2283f49241a7a31fa8044de953b, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2306808792450648738, guid: b462c2283f49241a7a31fa8044de953b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2306808792450648738, guid: b462c2283f49241a7a31fa8044de953b, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2306808792450648738, guid: b462c2283f49241a7a31fa8044de953b, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2306808792450648738, guid: b462c2283f49241a7a31fa8044de953b, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2306808792450648738, guid: b462c2283f49241a7a31fa8044de953b, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2306808792450648738, guid: b462c2283f49241a7a31fa8044de953b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2306808792450648738, guid: b462c2283f49241a7a31fa8044de953b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2306808792450648738, guid: b462c2283f49241a7a31fa8044de953b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8619187007975321079, guid: b462c2283f49241a7a31fa8044de953b, type: 3}
+      propertyPath: m_Name
+      value: Sphere
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: b462c2283f49241a7a31fa8044de953b, type: 3}
 --- !u!224 &4751865758165853055
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4237,3 +4295,4 @@ SceneRoots:
   - {fileID: 3001774293689589082}
   - {fileID: 2073726594}
   - {fileID: 1709087791}
+  - {fileID: 4658686440237373892}
