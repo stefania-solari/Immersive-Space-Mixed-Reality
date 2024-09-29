@@ -1,4 +1,4 @@
-using System;
+/*using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -98,6 +98,177 @@ public class UDPReceiver : MonoBehaviour
         if (udpClient != null)
         {
             udpClient.Close();
+        }
+    }
+}
+*/
+
+/*
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using UnityEngine;
+
+public class UDPReceiver : MonoBehaviour
+{
+    private Socket udpSocket;
+    private Thread udpReceiveThread;
+    private bool receiving = true;
+
+    public int localPort = 9000;  // Local port to listen for incoming messages
+
+    public delegate void MessageReceivedHandler(string message);
+    public event MessageReceivedHandler OnMessageReceived;
+
+    void Start()
+    {
+        SetupUDPSocket();
+
+        // Start the thread to receive UDP messages
+        udpReceiveThread = new Thread(new ThreadStart(ReceiveUDPMessages));
+        udpReceiveThread.Start();
+    }
+
+    void SetupUDPSocket()
+    {
+        try
+        {
+            // Initialize the UDP socket
+            udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            udpSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+
+            // Bind the socket to the local port for receiving messages
+            udpSocket.Bind(new IPEndPoint(IPAddress.Any, localPort));
+
+            Debug.Log("UDP receiver socket setup completed. Listening on port " + localPort);
+        }
+        catch (SocketException e)
+        {
+            Debug.LogError("Failed to setup UDP receiver socket: " + e.Message);
+        }
+    }
+
+    void ReceiveUDPMessages()
+    {
+        while (receiving)
+        {
+            try
+            {
+                // Buffer for receiving messages
+                byte[] data = new byte[1024];
+                EndPoint senderEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                int receivedDataLength = udpSocket.ReceiveFrom(data, ref senderEndPoint);
+
+                // Convert the received byte array to a string
+                string message = Encoding.UTF8.GetString(data, 0, receivedDataLength);
+                Debug.Log("Message received from TouchDesigner: " + message);
+
+                // Trigger the event when a message is received
+                OnMessageReceived?.Invoke(message);
+            }
+            catch (SocketException e)
+            {
+                Debug.LogError("Error receiving data via UDP: " + e.Message);
+            }
+        }
+    }
+
+    void OnApplicationQuit()
+    {
+        receiving = false;  // Stop the UDP receive thread
+        udpReceiveThread.Join();  // Wait for the thread to finish
+
+        if (udpSocket != null)
+        {
+            udpSocket.Close();
+            udpSocket = null;
+        }
+    }
+}
+
+*/
+
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using UnityEngine;
+
+public class UDPReceiver : MonoBehaviour
+{
+    private Socket udpSocket;
+    private Thread udpReceiveThread;
+    private bool receiving = true;
+
+    public int localPort = 9000;  // Local port to listen for incoming messages
+
+    // Delegate for when a message is received
+    public delegate void MessageReceivedHandler(string message);
+    public event MessageReceivedHandler OnMessageReceived;
+
+    void Start()
+    {
+        SetupUDPSocket();
+
+        // Start the thread to receive UDP messages
+        udpReceiveThread = new Thread(new ThreadStart(ReceiveUDPMessages));
+        udpReceiveThread.Start();
+    }
+
+    void SetupUDPSocket()
+    {
+        try
+        {
+            // Initialize the UDP socket
+            udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            udpSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+
+            // Bind the socket to the local port for receiving messages
+            udpSocket.Bind(new IPEndPoint(IPAddress.Any, localPort));
+
+            Debug.Log("UDP receiver socket setup completed. Listening on port " + localPort);
+        }
+        catch (SocketException e)
+        {
+            Debug.LogError("Failed to setup UDP receiver socket: " + e.Message);
+        }
+    }
+
+    void ReceiveUDPMessages()
+    {
+        while (receiving)
+        {
+            try
+            {
+                // Buffer for receiving messages
+                byte[] data = new byte[1024];
+                EndPoint senderEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                int receivedDataLength = udpSocket.ReceiveFrom(data, ref senderEndPoint);
+
+                // Convert the received byte array to a string
+                string message = Encoding.UTF8.GetString(data, 0, receivedDataLength);
+                Debug.Log("Message received from TouchDesigner: " + message);
+
+                // Trigger the event when a message is received
+                OnMessageReceived?.Invoke(message);
+            }
+            catch (SocketException e)
+            {
+                Debug.LogError("Error receiving data via UDP: " + e.Message);
+            }
+        }
+    }
+
+    void OnApplicationQuit()
+    {
+        receiving = false;  // Stop the UDP receive thread
+        udpReceiveThread.Join();  // Wait for the thread to finish
+
+        if (udpSocket != null)
+        {
+            udpSocket.Close();
+            udpSocket = null;
         }
     }
 }

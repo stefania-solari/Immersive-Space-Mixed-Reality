@@ -2131,8 +2131,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1709087791}
-  - component: {fileID: 1709087790}
   - component: {fileID: 1709087792}
+  - component: {fileID: 1709087793}
   m_Layer: 0
   m_Name: JellyfishManager
   m_TagString: Untagged
@@ -2140,22 +2140,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1709087790
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1709087789}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4c7bf761dd4704b1ca7f3b65a88d884c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  cubePrefab: {fileID: 4164400416591131336, guid: 8891db49c142940808207e604f130df8, type: 3}
-  spawnPosition: {x: 0, y: 0, z: 0}
-  remoteIPAddress: 192.168.61.162
-  remotePort: 8000
 --- !u!4 &1709087791
 Transform:
   m_ObjectHideFlags: 0
@@ -2183,10 +2167,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db0fd82ace61a42498e311b88d156f2f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  listenPort: 9000
-  cubePrefab: {fileID: 4164400416591131336, guid: 8891db49c142940808207e604f130df8, type: 3}
-  spawnPosition: {x: 0, y: 1, z: 0}
-  spawnRange: 3
+  localPort: 9000
+--- !u!114 &1709087793
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1709087789}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff21621ca90a449be8c7a6a93fca9b90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  objectPrefab: {fileID: 749972018946771579, guid: 75208d74b83014d4580691f34a8ebc18, type: 3}
+  secondJellifish: {fileID: 749972018946771579, guid: 75208d74b83014d4580691f34a8ebc18, type: 3}
+  planeManager: {fileID: 1772897519}
+  spawnPosition: {x: 0, y: 0.5, z: 0}
+  remoteIPAddress: 192.168.43.201
+  remotePort: 8000
 --- !u!4 &1732410181 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5310702087570344806, guid: 58011bca9681c484080084eccc4cb150, type: 3}

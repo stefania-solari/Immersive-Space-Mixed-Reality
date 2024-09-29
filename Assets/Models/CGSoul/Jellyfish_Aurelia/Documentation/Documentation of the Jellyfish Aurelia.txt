@@ -1,0 +1,44 @@
+Jellyfish Aurelia
+
+This Asset of the Jellyfish Aurelia will help diversify your underwater world. The animation is implemented in a realistic style. Textures are based on real references.
+
+The Jellyfish Aurelia is Animation Asset for Unity
+Include 6 animations:
+1. swim normal (loop) 0-52
+2. swim slowly (loop) 52-156
+3. swim slowly long (loop) 156-585
+4. swim normal long (loop) 585-846
+5. calm loop (846-1046)
+6. death (1046-1196)
+
+
+
+Technical details
+Number of textures: 6
+Texture dimensions: 2048x2048
+Polygon count of Jellyfish Pulmo: Tris 640
+Number of meshes/prefabs: 2
+Animation count: 1
+UV mapping: Yes
+LOD information (count, number of levels): 1
+Types of materials and texture maps (e.g., PBR): Shader Standart
+
+
+
+This version 2.0 contains next changes:
+Rig and skeleton completely redesigned. Adding a root bone. It is now possible to scale without distortion in the animation.
+The Value of Scale of bones is no longer animated, only the position parameter.
+Added 2 types of new textures: Metallic and Normal.
+Texture resolution increased to 2K.
+Improved quality of materials like brightness and sharpness.
+
+
+
+
+
+
+
+
+
+
+
