@@ -103,6 +103,7 @@ public class GoalManager2 : MonoBehaviour
 
     void Start()
     {
+        m_FadeMaterial.FadeSkybox(false);
         /*
         m_OnboardingGoals = new Queue<Goal>();
         var welcomeGoal = new Goal(OnboardingGoals.Empty);

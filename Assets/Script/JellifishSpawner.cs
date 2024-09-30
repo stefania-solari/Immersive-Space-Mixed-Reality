@@ -86,8 +86,7 @@ public class JellyfishSpawner : MonoBehaviour
             Debug.LogError("Failed to listen on UDP port " + portToCheck);
         }
 
-   // Start the coroutine to spawn a jellyfish every 2 seconds
-            StartCoroutine(SpawnJellyfishEveryTwoSeconds());
+
 
   
     }
@@ -327,12 +326,16 @@ void ReceiveMessages()
             planesDetected = true;
             Debug.Log("Planes detected.");
             // Send a message
-            //SendMessageToTouchDesigner("All planes detected.");
+            SendMessageToTouchDesigner("Planes detected.");
            
         }
 
+            SendMessageToTouchDesigner("All planes detected.");
+
         // Try to spawn the object if  planes are detected
-        //StartCoroutine(SpawnObjectOnRandomPlaneAuto());
+        StartCoroutine(SpawnObjectOnRandomPlaneAuto());
+        
+
         
     }
 
@@ -360,12 +363,12 @@ IEnumerator SpawnJellyfishEveryTwoSeconds()
 }
 
 
-    private void SpawnObjectOnRandomPlaneAuto()
+    IEnumerator SpawnObjectOnRandomPlaneAuto()
     {
         if (detectedPlanes.Count == 0)
         {
             Debug.LogError("No planes available for spawning.");
-            return;
+            yield return null;
         }
 
         // Select a random plane
@@ -373,18 +376,18 @@ IEnumerator SpawnJellyfishEveryTwoSeconds()
 
         // Get a random point on the plane's bounds
         Vector3 randomPosition = randomPlane.transform.position +
-                                 new Vector3(UnityEngine.Random.Range(-0.5f, 0.5f), 0, UnityEngine.Random.Range(-0.5f, 0.5f)) * randomPlane.size.x;
+                                 new Vector3(UnityEngine.Random.Range(-0.5f, 0.5f), UnityEngine.Random.Range(-0.5f, 0.5f), UnityEngine.Random.Range(-0.5f, 0.5f)) * randomPlane.size.x;
 
         // Instantiate the jellyfish at the random position on the plane
         spawnedJellyfish = Instantiate(objectPrefab, randomPosition, Quaternion.identity);
-        //jellyfishList.Add(spawnedJellyfish);  // Add the spawned jellyfish to the list
+        jellyfishList.Add(spawnedJellyfish);  // Add the spawned jellyfish to the list
 
         // Ensure the jellyfish has the necessary components for XR interaction
         SetupJellyfishForXRInteraction(spawnedJellyfish);
 
         // Start the destruction coroutine to destroy the jellyfish after 20 seconds
         StartCoroutine(DestroyAfterDelay(spawnedJellyfish, 10f));
-        //yield return null;  // Wait 1 second before spawning the next jellyfish
+        yield return null;  // Wait 1 second before spawning the next jellyfish
 
     }
 
@@ -494,6 +497,28 @@ IEnumerator SpawnJellyfishEveryTwoSeconds()
 
     }
 
+//------------------------------------------------------------------- change color
+    // Change color of all jellyfish in the environment
+
+public Color newColor = new Color(1.0f, 0.0f, 0.0f, 1.0f);  // Red color
+    void ChangeAllJellyfishColor(Color newColor)
+    {
+        foreach (GameObject jellyfish in jellyfishList)
+        {
+             SendMessageToTouchDesigner("Inside the jellifish");
+
+            Transform secondChild = jellyfish.transform.GetChild(0).GetChild(0);  // Assuming second child is index 1
+            Renderer renderer = secondChild.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                 SendMessageToTouchDesigner("Jellifish color");
+
+                renderer.material.color = newColor;
+                Debug.Log("Jellyfish color changed to: " + newColor);
+
+            }
+        }
+    }
 
 
 
@@ -517,8 +542,20 @@ IEnumerator SpawnJellyfishEveryTwoSeconds()
     private void OnJellyfishTouched(SelectEnterEventArgs args)
     {
         SendMessageToTouchDesigner("Jellyfish arg! touch");
+
         GameObject touchedJellyfish = args.interactableObject.transform.gameObject;
+        Transform secondChild = touchedJellyfish.transform.GetChild(0).GetChild(0);  // Assuming second child is index 1
+
         //some actions?
+          Renderer renderer = secondChild.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                SendMessageToTouchDesigner("Jellifish color");
+
+                renderer.material.color = newColor;
+                Debug.Log("Jellyfish color changed to: " + newColor);
+            }
+
 
     }
 
